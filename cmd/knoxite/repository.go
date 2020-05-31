@@ -1,6 +1,7 @@
 /*
  * knoxite
  *     Copyright (c) 2016-2020, Christian Muehlhaeuser <muesli@gmail.com>
+ *     Copyright (c) 2020,      Nicolas Martin <penguwin@penguwin.eu>
  *
  *   For license see LICENSE
  */
@@ -16,10 +17,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/knoxite/knoxite"
+	"github.com/knoxite/knoxite/cfg"
 	"github.com/knoxite/knoxite/utils"
 )
 
-// Error declarations
 var (
 	repoCmd = &cobra.Command{
 		Use:   "repo",
@@ -78,6 +79,17 @@ var (
 			return executeRepoPack()
 		},
 	}
+	repoAliasCmd = &cobra.Command{
+		Use:   "alias <alias>",
+		Short: "Set an alias for the storage backend url to a repository",
+		Long:  `The set command adds an alias for the storage backend url to a repository`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("alias needs an ALIAS to set")
+			}
+			return executeRepoAlias(args[0])
+		},
+	}
 )
 
 func init() {
@@ -87,6 +99,7 @@ func init() {
 	repoCmd.AddCommand(repoInfoCmd)
 	repoCmd.AddCommand(repoAddCmd)
 	repoCmd.AddCommand(repoPackCmd)
+	repoCmd.AddCommand(repoAliasCmd)
 	RootCmd.AddCommand(repoCmd)
 }
 
@@ -196,6 +209,18 @@ func executeRepoPack() error {
 
 	fmt.Printf("Freed storage space: %s\n", knoxite.SizeToString(freedSize))
 	return nil
+}
+
+func executeRepoAlias(alias string) error {
+	// At first check if the configuration file already exists
+	config.Repositories[alias] = cfg.RepoConfig{
+		Url: globalOpts.Repo,
+		// Compression: utils.CompressionText(knoxite.CompressionNone),
+		// Tolerance:   0,
+		// Encryption:  utils.EncryptionText(knoxite.EncryptionAES),
+	}
+
+	return config.Save()
 }
 
 func executeRepoInfo() error {
